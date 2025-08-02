@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>大型移動式抽水機支援申請表</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #333; margin-bottom: 30px; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+        input, select, textarea { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+        textarea { height: 80px; resize: vertical; }
+        .checkbox-group, .radio-group { display: flex; flex-wrap: wrap; gap: 15px; margin-top: 5px; }
+        .checkbox-item, .radio-item { display: flex; align-items: center; gap: 5px; }
+        .checkbox-item input, .radio-item input { width: auto; }
+        .inline-group { display: flex; gap: 10px; align-items: center; }
+        .inline-group input { flex: 1; }
+        .section-title { background: #4a90e2; color: white; padding: 10px; margin: 30px 0 20px 0; border-radius: 4px; }
+        .detail-row { border: 1px solid #ddd; padding: 15px; margin-bottom: 15px; border-radius: 4px; background: #fafafa; }
+        .add-btn, .remove-btn { padding: 8px 15px; border: none; border-radius: 4px; cursor: pointer; margin: 5px; }
+        .add-btn { background: #5cb85c; color: white; }
+        .remove-btn { background: #d9534f; color: white; }
+        .submit-btn { width: 100%; padding: 15px; background: #4a90e2; color: white; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; margin-top: 30px; }
+        .submit-btn:hover { background: #357abd; }
+        .submit-btn:disabled { background: #ccc; cursor: not-allowed; }
+        .required { color: red; }
+        .row { display: flex; gap: 15px; }
+        .col { flex: 1; }
+        #loading { display: none; text-align: center; margin-top: 20px; color: #666; }
+        .success-msg { background: #d4edda; color: #155724; padding: 15px; border-radius: 4px; margin-top: 20px; display: none; }
+        .error-msg { background: #f8d7da; color: #721c24; padding: 15px; border-radius: 4px; margin-top: 20px; display: none; }
+        .config-section { background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 4px; margin-bottom: 30px; }
+        .config-section input { margin-top: 10px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>大型移動式抽水機支援申請表</h1>
+        
+        <!-- API 設定區域 -->
+        <div class="config-section">
+            <strong>API 設定</strong>
+            <p>請輸入 Google Apps Script Web App URL：</p>
+            <input type="url" id="apiUrl" placeholder="https://script.google.com/macros/s/你的腳本ID/exec" style="width: 100%;">
+            <button type="button" onclick="saveApiUrl()" style="margin-top: 10px; padding: 8px 15px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">儲存設定</button>
+            <div id="apiStatus" style="margin-top: 10px; font-size: 14px;"></div>
+        </div>
+        
+        <form id="pumpForm">
+            <!-- 基本資料 -->
+            <div class="section-title">基本申請資料</div>
+            
+            <div class="row">
+                <div class="col">
+                    <div class="form-group">
+                        <label>申請機關 <span class="required">*</span></label>
+                        <input type="text" name="applicant_agency" required>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="form-group">
+                        <label>申請日期/時間 <span class="required">*</span></label>
+                        <input type="datetime-local" name="application_datetime" required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col">
+                    <div class="form-group">
+                        <label>填報人職稱 <span class="required">*</span></label>
+                        <input type="text" name="reporter_title" required>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="form-group">
+                        <label>填報人姓名 <span class="required">*</span></label>
+                        <input type="text" name="reporter_name" required>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="form-group">
+                        <label>填報人電話 <span class="required">*</span></label>
+                        <input type="tel" name="reporter_phone" required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>核定人</label>
+                <input type="text" name="approver">
+            </div>
+
+            <!-- 現場情況調查 -->
+            <div class="section-title">現場情況調查</div>
+
+            <div class="form-group">
+                <label>1. 申請支援地點是否已淹水？</label>
+                <div class="radio-group">
+                    <div class="radio-item">
+                        <input type="radio" name="is_flooded" value="是" id="flooded_yes">
+                        <label for="flooded_yes">是</label>
+                    </div>
+                    <div class="radio-item">
+                        <input type="radio" name="is_flooded" value="否" id="flooded_no">
+                        <label for="flooded_no">否</label>
+                    </div>
+                </div>
+                <div class="inline-group" style="margin-top: 10px;">
+                    <label>淹水高度約：</label>
+                    <input type="number" name="flood_height" placeholder="公分">
+                    <span>公分</span>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>2. 申請支援地點是否因下列原因致災？</label>
+                <div class="radio-group">
+                    <div class="radio-item">
+                        <input type="radio" name="disaster_reason" value="是" id="disaster_yes">
+                        <label for="disaster_yes">是</label>
+                    </div>
+                    <div class="radio-item">
+                        <input type="radio" name="disaster_reason" value="否" id="disaster_no">
+                        <label for="disaster_no">否</label>
+                    </div>
+                </div>
+                <div class="checkbox-group" style="margin-top: 10px;">
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="disaster_type" value="缺水" id="water_shortage">
+                        <label for="water_shortage">缺水</label>
+                    </div>
+                    <div class="checkbox-item">
+                        <input type="checkbox" name="disaster_type" value="持續下雨致災" id="continuous_rain">
+                        <label for="continuous_rain">持續下雨致災</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>3. 申請支援地點是否因河(溪)道、區域排水之外水侵入致災？</label>
+                <div class="radio-group">
+                    <div class="radio-item">
+                        <input type="radio" name="external_water" value="是" id="external_yes">
+                        <label for="external_yes">是</label>
+                    </div>
+                    <div class="radio-item">
+                        <input type="radio" name="external_water" value="否" id="external_no">
+                        <label for="external_no">否</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>4. 申請機關之直轄市、縣(市)政府有無先於轄區內進行調度移動式抽水機？</label>
+                <div class="radio-group">
+                    <div class="radio-item">
+                        <input type="radio" name="local_dispatch" value="有" id="local_yes">
+                        <label for="local_yes">有</label>
+                    </div>
+                    <div class="radio-item">
+                        <input type="radio" name="local_dispatch" value="無" id="local_no">
+                        <label for="local_no">無</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>5. 申請機關之直轄市、縣(市)政府有無聯繫與簽署災害防救相互支援協定之縣(市)政府，請求支援移動式抽水機？</label>
+                <div class="radio-group">
+                    <div class="radio-item">
+                        <input type="radio" name="mutual_support" value="有" id="mutual_yes">
+                        <label for="mutual_yes">有</label>
+                    </div>
+                    <div class="radio-item">
+                        <input type="radio" name="mutual_support" value="無" id="mutual_no">
+                        <label for="mutual_no">無</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>6. 該地區於情資研判資料中列為高風險淹水地區或為防汛熱點？</label>
+                <div class="radio-group">
+                    <div class="radio-item">
+                        <input type="radio" name="high_risk_area" value="有" id="risk_yes">
+                        <label for="risk_yes">有</label>
+                    </div>
+                    <div class="radio-item">
+                        <input type="radio" name="high_risk_area" value="無" id="risk_no">
+                        <label for="risk_no">無</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 支援地點明細 -->
+            <div class="section-title">支援地點明細</div>
+            
+            <div id="detailContainer">
+                <div class="detail-row">
+                    <h4>項次 1</h4>
+                    
+                    <div class="form-group">
+                        <label>受災情形說明 <span class="required">*</span></label>
+                        <textarea name="disaster_description" placeholder="簡要說明現場淹(缺)水情形、抽排放地點、高程及距離" required></textarea>
+                    </div>
+
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-group">
+                                <label>申請數量(台) <span class="required">*</span></label>
+                                <input type="number" name="quantity" min="1" required>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-group">
+                                <label>縣市 <span class="required">*</span></label>
+                                <input type="text" name="city" required>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-group">
+                                <label>鄉鎮市區 <span class="required">*</span></label>
+                                <input type="text" name="district" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>詳細地址或位置 <span class="required">*</span></label>
+                        <input type="text" name="address" placeholder="請詳述地址或座標" required>
+                    </div>
+
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-group">
+                                <label>申請聯絡人職稱 <span class="required">*</span></label>
+                                <input type="text" name="contact_title" required>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-group">
+                                <label>申請聯絡人姓名 <span class="required">*</span></label>
+                                <input type="text" name="contact_name" required>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-group">
+                                <label>申請聯絡人電話 <span class="required">*</span></label>
+                                <input type="tel" name="contact_phone" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col">
+                            <div class="form-group">
+                                <label>現場聯絡人職稱</label>
+                                <input type="text" name="site_contact_title">
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-group">
+                                <label>現場聯絡人姓名</label>
+                                <input type="text" name="site_contact_name">
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="form-group">
+                                <label>現場聯絡人電話</label>
+                                <input type="tel" name="site_contact_phone">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>備註</label>
+                        <textarea name="remarks"></textarea>
+                    </div>
+
+                    <button type="button" class="remove-btn" onclick="removeDetail(this)" style="display: none;">移除此項</button>
+                </div>
+            </div>
+
+            <button type="button" class="add-btn" onclick="addDetail()">+ 新增支援地點</button>
+
+            <button type="submit" class="submit-btn">提交申請</button>
+        </form>
+
+        <div id="loading">
+            處理中，請稍候...
+        </div>
+
+        <div id="successMsg" class="success-msg"></div>
+        <div id="errorMsg" class="error-msg"></div>
+    </div>
+
+    <script>
+        let detailCount = 1;
+
+        // API URL 管理
+        function saveApiUrl() {
+            const url = document.getElementById('apiUrl').value.trim();
+            if (!url) {
+                showApiStatus('請輸入 API URL', 'error');
+                return;
+            }
+            
+            if (!url.includes('script.google.com')) {
+                showApiStatus('請輸入有效的 Google Apps Script URL', 'error');
+                return;
+            }
+            
+            localStorage.setItem('gasApiUrl', url);
+            showApiStatus('API URL 已儲存', 'success');
+            testApiConnection(url);
+        }
+
+        function getApiUrl() {
+            return localStorage.getItem('gasApiUrl') || '';
+        }
+
+        function showApiStatus(message, type) {
+            const statusDiv = document.getElementById('apiStatus');
+            statusDiv.textContent = message;
+            statusDiv.style.color = type === 'error' ? '#721c24' : '#155724';
+            statusDiv.style.background = type === 'error' ? '#f8d7da' : '#d4edda';
+            statusDiv.style.padding = '8px';
+            statusDiv.style.borderRadius = '4px';
+        }
+
+        async function testApiConnection(url) {
+            try {
+                // 測試 GET 請求
+                const response = await fetch(url, {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.status) {
+                        showApiStatus('API 連線測試成功 ✓', 'success');
+                    } else {
+                        showApiStatus('API 回應異常', 'error');
+                    }
+                } else {
+                    showApiStatus(`API 連線測試失敗 (${response.status})`, 'error');
+                }
+            } catch (error) {
+                showApiStatus('API 連線測試失敗: ' + error.message, 'error');
+                console.error('API Test Error:', error);
+            }
+        }
+
+        // 頁面載入時初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedUrl = getApiUrl();
+            if (savedUrl) {
+                document.getElementById('apiUrl').value = savedUrl;
+                showApiStatus('已載入已儲存的 API URL', 'success');
+            }
+            setCurrentDateTime();
+        });
+
+        function addDetail() {
+            detailCount++;
+            const container = document.getElementById('detailContainer');
+            const newDetail = document.querySelector('.detail-row').cloneNode(true);
+            
+            newDetail.querySelector('h4').textContent = `項次 ${detailCount}`;
+            
+            const inputs = newDetail.querySelectorAll('input, textarea');
+            inputs.forEach(input => input.value = '');
+            
+            newDetail.querySelector('.remove-btn').style.display = 'inline-block';
+            
+            container.appendChild(newDetail);
+            updateRemoveButtons();
+        }
+
+        function removeDetail(button) {
+            button.closest('.detail-row').remove();
+            updateDetailNumbers();
+            updateRemoveButtons();
+        }
+
+        function updateDetailNumbers() {
+            const details = document.querySelectorAll('.detail-row');
+            details.forEach((detail, index) => {
+                detail.querySelector('h4').textContent = `項次 ${index + 1}`;
+            });
+            detailCount = details.length;
+        }
+
+        function updateRemoveButtons() {
+            const removeButtons = document.querySelectorAll('.remove-btn');
+            removeButtons.forEach((btn, index) => {
+                btn.style.display = index === 0 ? 'none' : 'inline-block';
+            });
+        }
+
+        document.getElementById('pumpForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const apiUrl = getApiUrl();
+            if (!apiUrl) {
+                showMessage('請先設定 API URL', 'error');
+                return;
+            }
+            
+            const loading = document.getElementById('loading');
+            const successMsg = document.getElementById('successMsg');
+            const errorMsg = document.getElementById('errorMsg');
+            
+            successMsg.style.display = 'none';
+            errorMsg.style.display = 'none';
+            loading.style.display = 'block';
+            
+            try {
+                const formData = collectFormData();
+                
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const result = await response.json();
+                
+                loading.style.display = 'none';
+                
+                if (result.success) {
+                    successMsg.textContent = result.message;
+                    successMsg.style.display = 'block';
+                    document.getElementById('pumpForm').reset();
+                    resetToSingleDetail();
+                    setCurrentDateTime();
+                } else {
+                    errorMsg.textContent = result.error || '提交失敗';
+                    errorMsg.style.display = 'block';
+                }
+                
+            } catch (error) {
+                loading.style.display = 'none';
+                errorMsg.textContent = '網路錯誤：' + error.message;
+                errorMsg.style.display = 'block';
+            }
+        });
+
+        function showMessage(message, type) {
+            const successMsg = document.getElementById('successMsg');
+            const errorMsg = document.getElementById('errorMsg');
+            
+            successMsg.style.display = 'none';
+            errorMsg.style.display = 'none';
+            
+            if (type === 'success') {
+                successMsg.textContent = message;
+                successMsg.style.display = 'block';
+            } else {
+                errorMsg.textContent = message;
+                errorMsg.style.display = 'block';
+            }
+        }
+
+        function collectFormData() {
+            const form = document.getElementById('pumpForm');
+            const formData = {};
+            
+            const basicFields = ['applicant_agency', 'application_datetime', 'reporter_title', 
+                               'reporter_name', 'reporter_phone', 'approver', 'is_flooded', 
+                               'flood_height', 'disaster_reason', 'external_water', 
+                               'local_dispatch', 'mutual_support', 'high_risk_area'];
+            
+            basicFields.forEach(field => {
+                const element = form.querySelector(`[name="${field}"]`);
+                if (element) {
+                    if (element.type === 'radio') {
+                        const checked = form.querySelector(`[name="${field}"]:checked`);
+                        formData[field] = checked ? checked.value : '';
+                    } else {
+                        formData[field] = element.value;
+                    }
+                }
+            });
+            
+            const disasterTypes = [];
+            form.querySelectorAll('[name="disaster_type"]:checked').forEach(cb => {
+                disasterTypes.push(cb.value);
+            });
+            formData.disaster_type = disasterTypes;
+            
+            const details = [];
+            document.querySelectorAll('.detail-row').forEach(row => {
+                const detail = {
+                    disaster_description: row.querySelector('[name="disaster_description"]').value,
+                    quantity: row.querySelector('[name="quantity"]').value,
+                    city: row.querySelector('[name="city"]').value,
+                    district: row.querySelector('[name="district"]').value,
+                    address: row.querySelector('[name="address"]').value,
+                    contact_title: row.querySelector('[name="contact_title"]').value,
+                    contact_name: row.querySelector('[name="contact_name"]').value,
+                    contact_phone: row.querySelector('[name="contact_phone"]').value,
+                    site_contact_title: row.querySelector('[name="site_contact_title"]').value,
+                    site_contact_name: row.querySelector('[name="site_contact_name"]').value,
+                    site_contact_phone: row.querySelector('[name="site_contact_phone"]').value,
+                    remarks: row.querySelector('[name="remarks"]').value
+                };
+                details.push(detail);
+            });
+            formData.details = details;
+            
+            return formData;
+        }
+
+        function resetToSingleDetail() {
+            const container = document.getElementById('detailContainer');
+            const details = container.querySelectorAll('.detail-row');
+            for (let i = 1; i < details.length; i++) {
+                details[i].remove();
+            }
+            detailCount = 1;
+            updateRemoveButtons();
+        }
+
+        function setCurrentDateTime() {
+            const now = new Date();
+            const timestamp = now.getFullYear() + '-' + 
+                String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                String(now.getDate()).padStart(2, '0') + 'T' + 
+                String(now.getHours()).padStart(2, '0') + ':' + 
+                String(now.getMinutes()).padStart(2, '0');
+            document.querySelector('[name="application_datetime"]').value = timestamp;
+        }
+    </script>
+</body>
+</html>
