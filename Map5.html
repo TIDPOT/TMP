@@ -3,115 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>地圖－台南防汛地圖</title>
+  <title>地圖-台南防汛地圖</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body { height: 100%; }
-    body {
-      display: flex;
-      flex-direction: column;
-      font-family: "Microsoft JhengHei", "PingFang TC", sans-serif;
-      background: #f5f5f5;
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 95%;
     }
-    .fallback-bar {
-      flex-shrink: 0;
-      display: none;
-      align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 8px 12px;
-      background: #fff3cd;
-      border-bottom: 1px solid #ffc107;
-      font-size: 0.85rem;
-      color: #664d03;
-    }
-    .fallback-bar.show { display: flex; }
-    .fallback-bar a {
-      color: #1a5fb4;
-      font-weight: bold;
-      white-space: nowrap;
-    }
-    .map-frame-wrap {
-      flex: 1;
-      min-height: 0;
-      position: relative;
-    }
-    #map-frame {
+    iframe {
       width: 100%;
-      height: 100%;
+      height: 95vh;
       border: none;
-      display: block;
     }
-    .loading {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: #f5f5f5;
-      color: #666;
-      font-size: 0.95rem;
-      pointer-events: none;
-    }
-    .loading.hide { display: none; }
   </style>
 </head>
 <body>
-  <div class="fallback-bar" id="fallback-bar">
-    <span>地圖無法在框內顯示時，請改用直接開啟。</span>
-    <a id="fallback-link" href="#" target="_blank" rel="noopener">開啟防汛地圖</a>
-    <a href="Map5Diagnostic.html" style="color:#1a5fb4;font-size:0.85rem;white-space:nowrap;">診斷</a>
-  </div>
-
-  <div class="map-frame-wrap">
-    <div class="loading" id="loading">載入地圖中…</div>
-    <iframe
-      id="map-frame"
-      title="台南防汛地圖"
-      allow="geolocation *; fullscreen"
-      referrerpolicy="no-referrer-when-downgrade"
-      loading="eager"
-    ></iframe>
-  </div>
-
-  <script>
-    (function () {
-      // 改成你的 GAS 部署 /exec URL
-      var GAS_URL = 'https://script.google.com/macros/s/AKfycbxd-59dc702EjOSG7AgfyijMPFLK94GYWvqpkssZZMbIrMHvSpzrrgMtmZZIHlvCz2n/exec';
-
-      var iframe = document.getElementById('map-frame');
-      var loading = document.getElementById('loading');
-      var fallbackBar = document.getElementById('fallback-bar');
-      var fallbackLink = document.getElementById('fallback-link');
-      var loaded = false;
-      var mapReady = false;
-
-      fallbackLink.href = GAS_URL;
-      iframe.src = GAS_URL + (GAS_URL.indexOf('?') >= 0 ? '&' : '?') + 'v=5.0.2';
-
-      iframe.addEventListener('load', function () {
-        loaded = true;
-        if (mapReady) loading.classList.add('hide');
-      });
-
-      window.addEventListener('message', function (e) {
-        if (e.data === 'tainan-flood-map-ready') {
-          mapReady = true;
-          loading.classList.add('hide');
-          fallbackBar.classList.remove('show');
-        }
-      });
-
-      // 若 GAS 被 X-Frame-Options 擋住，不會收到 postMessage
-      setTimeout(function () {
-        if (!mapReady) {
-          fallbackBar.classList.add('show');
-          loading.textContent = loaded
-            ? '地圖可能無法嵌入，請點上方連結直接開啟。'
-            : '載入逾時，請點上方連結直接開啟。';
-        }
-      }, 5000);
-    })();
-  </script>
+  <!-- 在這裡加入 allow="geolocation" -->
+  <iframe 
+    src="https://script.google.com/macros/s/AKfycbxd-59dc702EjOSG7AgfyijMPFLK94GYWvqpkssZZMbIrMHvSpzrrgMtmZZIHlvCz2n/exec" 
+    allow="geolocation"
+    frameborder="0">
+  </iframe>
 </body>
 </html>
