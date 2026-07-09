@@ -3,96 +3,114 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>台南防汛地圖</title>
+  <title>地圖－台南防汛地圖</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
     body {
-      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      font-family: "Microsoft JhengHei", "PingFang TC", sans-serif;
+      background: #f5f5f5;
+    }
+    .fallback-bar {
+      flex-shrink: 0;
+      display: none;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 8px 12px;
+      background: #fff3cd;
+      border-bottom: 1px solid #ffc107;
+      font-size: 0.85rem;
+      color: #664d03;
+    }
+    .fallback-bar.show { display: flex; }
+    .fallback-bar a {
+      color: #1a5fb4;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+    .map-frame-wrap {
+      flex: 1;
+      min-height: 0;
+      position: relative;
+    }
+    #map-frame {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
+    .loading {
+      position: absolute;
+      inset: 0;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-family: "Microsoft JhengHei", "PingFang TC", sans-serif;
-      background: linear-gradient(160deg, #e8f4fd 0%, #f5f7fa 45%, #e3f2e8 100%);
-      color: #333;
-      padding: 24px;
+      background: #f5f5f5;
+      color: #666;
+      font-size: 0.95rem;
+      pointer-events: none;
     }
-    .card {
-      width: 100%;
-      max-width: 420px;
-      background: #fff;
-      border-radius: 16px;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-      padding: 32px 28px;
-      text-align: center;
-    }
-    .icon { font-size: 3rem; line-height: 1; margin-bottom: 12px; }
-    h1 { font-size: 1.5rem; margin-bottom: 8px; color: #1a5fb4; }
-    p { font-size: 0.95rem; color: #666; line-height: 1.6; margin-bottom: 20px; }
-    .btn {
-      display: inline-block;
-      width: 100%;
-      padding: 14px 20px;
-      background: #34a853;
-      color: #fff;
-      text-decoration: none;
-      border-radius: 10px;
-      font-size: 1.05rem;
-      font-weight: bold;
-      border: none;
-      cursor: pointer;
-      transition: background 0.2s, transform 0.15s;
-    }
-    .btn:hover { background: #2d9249; transform: translateY(-1px); }
-    .btn-secondary {
-      display: inline-block;
-      margin-top: 12px;
-      font-size: 0.85rem;
-      color: #888;
-      text-decoration: none;
-    }
-    .btn-secondary:hover { color: #34a853; text-decoration: underline; }
-    .hint {
-      margin-top: 20px;
-      padding-top: 16px;
-      border-top: 1px solid #eee;
-      font-size: 0.78rem;
-      color: #aaa;
-      line-height: 1.5;
-    }
+    .loading.hide { display: none; }
   </style>
 </head>
 <body>
-  <div class="card">
-    <div class="icon">🗺️</div>
-    <h1>台南防汛地圖</h1>
-    <p>即時水位、淹水感測、氣象預報與圖層查詢。<br>請點下方按鈕開啟地圖（建議加入書籤）。</p>
+  <div class="fallback-bar" id="fallback-bar">
+    <span>地圖無法在框內顯示時，請改用直接開啟。</span>
+    <a id="fallback-link" href="#" target="_blank" rel="noopener">開啟防汛地圖</a>
+  </div>
 
-    <!-- 改成你的 GAS 部署 /exec URL -->
-    <a
-      id="open-map-btn"
-      class="btn"
-      href="https://script.google.com/macros/s/AKfycbxd-59dc702EjOSG7AgfyijMPFLK94GYWvqpkssZZMbIrMHvSpzrrgMtmZZIHlvCz2n/exec"
-      target="_self"
-      rel="noopener"
-    >開啟防汛地圖</a>
-
-    <a
-      class="btn-secondary"
-      href="https://script.google.com/macros/s/AKfycbxxowgOgElJguox1pa0v2lCj2VTItYwkl8tWqi5Q2IHZsjAtz3pp-UTN5Wri_OMoQz8/exec"
-      target="_blank"
-      rel="noopener"
-    >在新分頁開啟</a>
-
-    <p class="hint">
-      Google 已限制外站 iframe 嵌入（X-Frame-Options），<br>
-      故改以直接開啟方式提供服務。
-    </p>
+  <div class="map-frame-wrap">
+    <div class="loading" id="loading">載入地圖中…</div>
+    <iframe
+      id="map-frame"
+      title="台南防汛地圖"
+      allow="geolocation *; fullscreen"
+      referrerpolicy="no-referrer-when-downgrade"
+      loading="eager"
+    ></iframe>
   </div>
 
   <script>
-    // 若希望一進 GitHub 頁就自動跳轉，取消下面兩行註解：
-    // var GAS_URL = document.getElementById('open-map-btn').href;
-    // window.location.replace(GAS_URL);
+    (function () {
+      // 改成你的 GAS 部署 /exec URL
+      var GAS_URL = 'https://script.google.com/macros/s/AKfycbxd-59dc702EjOSG7AgfyijMPFLK94GYWvqpkssZZMbIrMHvSpzrrgMtmZZIHlvCz2n/exec';
+
+      var iframe = document.getElementById('map-frame');
+      var loading = document.getElementById('loading');
+      var fallbackBar = document.getElementById('fallback-bar');
+      var fallbackLink = document.getElementById('fallback-link');
+      var loaded = false;
+      var mapReady = false;
+
+      fallbackLink.href = GAS_URL;
+      iframe.src = GAS_URL + (GAS_URL.indexOf('?') >= 0 ? '&' : '?') + 'v=5.0.2';
+
+      iframe.addEventListener('load', function () {
+        loaded = true;
+        if (mapReady) loading.classList.add('hide');
+      });
+
+      window.addEventListener('message', function (e) {
+        if (e.data === 'tainan-flood-map-ready') {
+          mapReady = true;
+          loading.classList.add('hide');
+          fallbackBar.classList.remove('show');
+        }
+      });
+
+      // 若 GAS 被 X-Frame-Options 擋住，不會收到 postMessage
+      setTimeout(function () {
+        if (!mapReady) {
+          fallbackBar.classList.add('show');
+          loading.textContent = loaded
+            ? '地圖可能無法嵌入，請點上方連結直接開啟。'
+            : '載入逾時，請點上方連結直接開啟。';
+        }
+      }, 5000);
+    })();
   </script>
 </body>
 </html>
