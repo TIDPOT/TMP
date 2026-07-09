@@ -3,141 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>iframe 嵌入診斷－台南防汛地圖</title>
+  <title>地圖-台南防汛地圖</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: "Microsoft JhengHei", "PingFang TC", sans-serif;
-      background: #f5f5f5;
-      color: #333;
-      padding: 16px;
-      line-height: 1.5;
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 95%;
     }
-    h1 { font-size: 1.2rem; margin-bottom: 8px; color: #1a5fb4; }
-    .intro { font-size: 0.9rem; color: #555; margin-bottom: 16px; max-width: 900px; }
-    .intro code { background: #eee; padding: 2px 6px; border-radius: 4px; font-size: 0.85rem; }
-    .panels { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; max-width: 1200px; }
-    @media (max-width: 768px) { .panels { grid-template-columns: 1fr; } }
-    .panel {
-      background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      min-height: 320px;
+    iframe {
+      width: 100%;
+      height: 95vh;
+      border: none;
     }
-    .panel-head {
-      padding: 10px 12px;
-      background: #f8f9fa;
-      border-bottom: 1px solid #eee;
-      font-size: 0.9rem;
-      font-weight: bold;
-    }
-    .status {
-      font-weight: normal;
-      font-size: 0.8rem;
-      margin-left: 8px;
-    }
-    .status.pending { color: #888; }
-    .status.ok { color: #34a853; }
-    .status.fail { color: #ea4335; }
-    .panel iframe { flex: 1; width: 100%; min-height: 280px; border: none; background: #fafafa; }
-    .steps {
-      max-width: 900px;
-      margin-top: 16px;
-      padding: 12px 14px;
-      background: #fff;
-      border-radius: 8px;
-      font-size: 0.88rem;
-      border-left: 4px solid #4285f4;
-    }
-    .steps ol { margin: 8px 0 0 20px; }
-    .steps li { margin-bottom: 6px; }
-    .links { margin-top: 12px; font-size: 0.88rem; }
-    .links a { color: #1a5fb4; margin-right: 16px; }
   </style>
 </head>
 <body>
-  <h1>iframe 嵌入診斷</h1>
-  <p class="intro">
-    用於比對 <code>X-Frame-Options</code>：左為最小測試頁（<code>?embedTest=1</code>），右為完整地圖。
-    請開 DevTools → Network，分別查看兩個 iframe 的 <code>exec</code> 回應標頭。
-  </p>
-
-  <div class="panels">
-    <div class="panel">
-      <div class="panel-head">
-        最小嵌入測試
-        <span class="status pending" id="status-test">等待載入…</span>
-      </div>
-      <iframe id="frame-test" title="Embed Test" allow="geolocation *"></iframe>
-    </div>
-    <div class="panel">
-      <div class="panel-head">
-        完整地圖（正式版）
-        <span class="status pending" id="status-map">等待載入…</span>
-      </div>
-      <iframe id="frame-map" title="台南防汛地圖" allow="geolocation *; fullscreen"></iframe>
-    </div>
-  </div>
-
-  <div class="steps">
-    <strong>Response Headers 比對步驟</strong>
-    <ol>
-      <li>在此頁按 F12 → Network，重新整理。</li>
-      <li>分別點兩個 iframe 的 <code>exec</code> 請求 → Headers → Response Headers。</li>
-      <li>查 <code>x-frame-options</code>：若為 <code>SAMEORIGIN</code>，GitHub 無法嵌入。</li>
-      <li>另開頂層分頁直接訪問 <code>/exec</code>，比對標頭是否不同。</li>
-      <li>到 GAS 開 <code>/exec?diag=1</code> 執行「檢查 GAS 專案 HTML 檔案」。</li>
-      <li>到 Apps Script → 執行作業，查看 <code>[doGet] mode=...</code> 是否有失敗。</li>
-    </ol>
-  </div>
-
-  <div class="links">
-    <a id="link-direct" href="#" target="_blank" rel="noopener">頂層開啟完整地圖</a>
-    <a id="link-test" href="#" target="_blank" rel="noopener">頂層開啟最小測試</a>
-    <a id="link-diag" href="#" target="_blank" rel="noopener">GAS 診斷頁 (?diag=1)</a>
-    <a href="Map5.html">回到 Map5 正式入口</a>
-  </div>
-
-  <script>
-    (function () {
-      var GAS_URL = 'https://script.google.com/macros/s/AKfycbxd-59dc702EjOSG7AgfyijMPFLK94GYWvqpkssZZMbIrMHvSpzrrgMtmZZIHlvCz2n/exec';
-      var TEST_URL = GAS_URL + (GAS_URL.indexOf('?') >= 0 ? '&' : '?') + 'embedTest=1';
-      var DIAG_URL = GAS_URL + (GAS_URL.indexOf('?') >= 0 ? '&' : '?') + 'diag=1';
-
-      document.getElementById('frame-test').src = TEST_URL;
-      document.getElementById('frame-map').src = GAS_URL + (GAS_URL.indexOf('?') >= 0 ? '&' : '?') + 'v=5.0.2';
-      document.getElementById('link-direct').href = GAS_URL;
-      document.getElementById('link-test').href = TEST_URL;
-      document.getElementById('link-diag').href = DIAG_URL;
-
-      var statusTest = document.getElementById('status-test');
-      var statusMap = document.getElementById('status-map');
-
-      window.addEventListener('message', function (e) {
-        if (e.data === 'embed-test-ok') {
-          statusTest.textContent = '嵌入成功';
-          statusTest.className = 'status ok';
-        }
-        if (e.data === 'tainan-flood-map-ready') {
-          statusMap.textContent = '嵌入成功';
-          statusMap.className = 'status ok';
-        }
-      });
-
-      setTimeout(function () {
-        if (statusTest.classList.contains('pending')) {
-          statusTest.textContent = '可能失敗（查 Network 標頭）';
-          statusTest.className = 'status fail';
-        }
-        if (statusMap.classList.contains('pending')) {
-          statusMap.textContent = '可能失敗（查 Network 標頭）';
-          statusMap.className = 'status fail';
-        }
-      }, 6000);
-    })();
-  </script>
+  <!-- 在這裡加入 allow="geolocation" -->
+  <iframe 
+    src="https://script.google.com/macros/s/AKfycbxd-59dc702EjOSG7AgfyijMPFLK94GYWvqpkssZZMbIrMHvSpzrrgMtmZZIHlvCz2n/exec" 
+    allow="geolocation"
+    frameborder="0">
+  </iframe>
 </body>
 </html>
