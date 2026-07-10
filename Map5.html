@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
@@ -15,9 +13,15 @@
     }
     iframe {
       width: 100%;
-      height: 90vh;
+      height: 100%; /* 預設桌面用滿版 */
       border: none;
       display: block; /* 移除 iframe 預設的底部間隙 */
+    }
+    /* 手機裝置 (螢幕寬度小於768px) */
+    @media (max-width: 768px) {
+      iframe {
+        height: 90vh; /* 手機用 90vh，避免超出螢幕 */
+      }
     }
   </style>
 </head>
